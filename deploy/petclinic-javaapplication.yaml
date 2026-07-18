@@ -1,7 +1,8 @@
 # Spring PetClinic as a Brewlet JavaApplication.
 #
 # The real upstream Spring Boot app (spring-projects/spring-petclinic), shipped
-# as an OCI *artifact* (just the fat JAR — see src/spring-petclinic/build.sh),
+# as an OCI *artifact* (just the fat JAR — see the spring-petclinic fixture in
+# github.com/brewlet/integration-tests),
 # not a container image. The brewlet-operator expands this JavaApplication into a
 # Deployment (runtimeClassName: brewlet) + Service; the node-resident JDK runs it
 # with `java -jar`, sized by the cgroup limits below.
@@ -20,7 +21,7 @@ metadata:
 spec:
   artifact:
     # Push the fat JAR to your registry first, e.g.:
-    #   brewlet push src/spring-petclinic/target/spring-petclinic.jar \
+    #   brewlet push /path/to/spring-petclinic.jar \
     #     registry.example.com/demo/petclinic:1.0.0
     image: registry.example.com/demo/petclinic:1.0.0   # OCI artifact, not an image
     pullPolicy: IfNotPresent
