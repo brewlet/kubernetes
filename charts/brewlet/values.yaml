@@ -18,7 +18,8 @@ images:
 # seed the chart-rendered **default** NodeProfile (the catch-all that owns every
 # node not claimed by a named-pool profile below). See §5.6.
 provisioner:
-  # Comma-separated <dist>-<feature> JDK roots (§5.3).
+  # Comma-separated curated <dist>-<feature> roots, or a structured list when
+  # custom distributions need source.image + source.javaHome (§5.3).
   jdks: "temurin-21,microsoft-25"
   # Comma-separated launcher layers, e.g. "jaz" (§5.4). Empty = vanilla java only.
   launchers: "jaz"
@@ -44,7 +45,7 @@ defaultProfile:
 #   - name: batch
 #     pools: ["batch"]        # pool name(s), matched on the resolved pool key
 #     key: ""                 # optional explicit node label key (auto-detected if empty)
-#     jdks: "microsoft-25"    # comma-separated <dist>-<feature>
+#     jdks: "microsoft-25"    # string, or structured list for custom sources
 #     launchers: "jaz"        # comma-separated (optional)
 #     rollout: { maxUnavailable: 1, validate: true, containerdRestart: validated }
 #     registry: { mirrors: { "mcr.microsoft.com": "mirror.internal/mcr" } }

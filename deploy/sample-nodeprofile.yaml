@@ -24,6 +24,25 @@ spec:
     validate: true
     containerdRestart: validated
 ---
+# A custom distribution supplies the OCI image and the JDK root inside it. This
+# example uses the multi-architecture Docker Official Image for Azul Zulu.
+apiVersion: node.brewlet.sh/v1alpha1
+kind: NodeProfile
+metadata:
+  name: zulu
+spec:
+  nodePool:
+    names: ["zulu-workers"]
+  jdks:
+    - distribution: zulu
+      feature: 21
+      source:
+        image: docker.io/library/azul-zulu:21
+        javaHome: /usr/lib/jvm/zulu21
+  rollout:
+    validate: true
+    containerdRestart: validated
+---
 # A named-pool profile: only nodes whose resolved pool key carries one of these
 # names get this inventory. The operator auto-detects the pool key (gke-nodepool
 # / agentpool / eks.amazonaws.com/nodegroup / karpenter.sh/nodepool) unless you

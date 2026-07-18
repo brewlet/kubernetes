@@ -45,8 +45,80 @@ func TestValidateNodeProfile(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "unknown distribution rejected",
+			name:    "custom distribution without source rejected",
 			spec:    nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{jdk("corretto", 21)}},
+			wantErr: true,
+		},
+		{
+			name: "custom distribution accepted",
+			spec: nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{{
+				Distribution: "zulu",
+				Feature:      21,
+				Source: &nodev1alpha1.JDKSource{
+					Image:    "docker.io/library/azul-zulu:21",
+					JavaHome: "/usr/lib/jvm/zulu21",
+				},
+			}}},
+			wantErr: false,
+		},
+		{
+			name: "curated distribution override rejected",
+			spec: nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{{
+				Distribution: "temurin",
+				Feature:      21,
+				Source: &nodev1alpha1.JDKSource{
+					Image:    "registry.example.com/jdk:21",
+					JavaHome: "/opt/jdk",
+				},
+			}}},
+			wantErr: true,
+		},
+		{
+			name: "custom image must be fully qualified",
+			spec: nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{{
+				Distribution: "zulu",
+				Feature:      21,
+				Source: &nodev1alpha1.JDKSource{
+					Image:    "azul-zulu:21",
+					JavaHome: "/usr/lib/jvm/zulu21",
+				},
+			}}},
+			wantErr: true,
+		},
+		{
+			name: "custom image must be a valid OCI reference",
+			spec: nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{{
+				Distribution: "zulu",
+				Feature:      21,
+				Source: &nodev1alpha1.JDKSource{
+					Image:    "registry.example.com/jdk:bad:tag",
+					JavaHome: "/usr/lib/jvm/zulu21",
+				},
+			}}},
+			wantErr: true,
+		},
+		{
+			name: "custom java home must be clean and absolute",
+			spec: nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{{
+				Distribution: "zulu",
+				Feature:      21,
+				Source: &nodev1alpha1.JDKSource{
+					Image:    "docker.io/library/azul-zulu:21",
+					JavaHome: "/usr/lib/../jdk",
+				},
+			}}},
+			wantErr: true,
+		},
+		{
+			name: "JDK token must fit capability label",
+			spec: nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{{
+				Distribution: "this-distribution-name-is-far-too-long-for-a-jdk-label-xx",
+				Feature:      21,
+				Source: &nodev1alpha1.JDKSource{
+					Image:    "registry.example.com/jdk:21",
+					JavaHome: "/opt/jdk",
+				},
+			}}},
 			wantErr: true,
 		},
 		{
@@ -159,6 +231,35 @@ func TestMirrorEnv(t *testing.T) {
 func TestJDKRefToken(t *testing.T) {
 	if got := jdk("temurin", 21).Token(); got != "temurin-21" {
 		t.Fatalf("Token() = %q, want temurin-21", got)
+	}
+}
+
+func TestCustomJDKSourceEnv(t *testing.T) {
+	p := profileNamed("custom", nil,
+		jdk("temurin", 21),
+		nodev1alpha1.JDKRef{
+			Distribution: "zulu",
+			Feature:      21,
+			Source: &nodev1alpha1.JDKSource{
+				Image:    "docker.io/library/azul-zulu:21",
+				JavaHome: "/usr/lib/jvm/zulu21",
+			},
+		},
+	)
+	got := map[string]string{}
+	for _, item := range customJDKSourceEnv(&p) {
+		got[item.Name] = item.Value
+	}
+	want := map[string]string{
+		"JDK_CUSTOM_SOURCE_COUNT":       "1",
+		"JDK_CUSTOM_SOURCE_0_TOKEN":     "zulu-21",
+		"JDK_CUSTOM_SOURCE_0_IMAGE":     "docker.io/library/azul-zulu:21",
+		"JDK_CUSTOM_SOURCE_0_JAVA_HOME": "/usr/lib/jvm/zulu21",
+	}
+	for key, value := range want {
+		if got[key] != value {
+			t.Errorf("%s = %q, want %q", key, got[key], value)
+		}
 	}
 }
 

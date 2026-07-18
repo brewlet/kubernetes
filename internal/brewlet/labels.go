@@ -41,6 +41,10 @@ const (
 	// (proposal 0002). The NodeProfileReconciler reads it when computing
 	// readyNodes and surfaces it as the owning profile's Degraded reason (§5.5).
 	AnnotationProvisionError = "brewlet.sh/provision-error"
+	// AnnotationProfile and AnnotationProfileGeneration identify the exact
+	// NodeProfile revision the provisioner successfully applied to a node.
+	AnnotationProfile           = "brewlet.sh/profile"
+	AnnotationProfileGeneration = "brewlet.sh/profile-generation"
 )
 
 // Node-pool vocabulary for the NodeProfile model (§5.6 / proposal 0001).
@@ -67,9 +71,8 @@ var ProviderPoolKeys = []string{
 	"karpenter.sh/nodepool",          // Karpenter
 }
 
-// CuratedDistributions are the JDK distributions the provisioner can install via
-// copy-from-image (§5.3). A NodeProfile referencing any other distribution is
-// rejected by the validating webhook (§8.3).
+// CuratedDistributions have built-in copy-from-image mappings (§5.3). Other
+// distributions are accepted when their NodeProfile supplies a custom source.
 var CuratedDistributions = []string{"temurin", "microsoft"}
 
 // ProfileDaemonSetName is the name of the provisioner DaemonSet the operator

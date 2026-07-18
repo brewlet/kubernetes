@@ -52,15 +52,15 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	// Reflect the node's provisioning state.
-	if node.Labels[brewlet.LabelRuntimeReady] == brewlet.ValueReady {
-		return ctrl.Result{}, r.markReady(ctx, &node)
-	}
-
 	// A provisioner-reported reconfig/validation failure (proposal 0002) is a
 	// hard failure regardless of pod health.
 	if e := node.Annotations[brewlet.AnnotationProvisionError]; e != "" {
 		return ctrl.Result{}, r.markFailed(ctx, &node, e)
+	}
+
+	// Reflect the node's provisioning state.
+	if node.Labels[brewlet.LabelRuntimeReady] == brewlet.ValueReady {
+		return ctrl.Result{}, r.markReady(ctx, &node)
 	}
 
 	// Not ready yet: distinguish "still working" from "failing".

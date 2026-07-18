@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	nodev1alpha1 "brewlet-operator/api/nodeprofile/v1alpha1"
@@ -112,7 +113,7 @@ func TestNodeProfileReconcileCreatesDaemonSet(t *testing.T) {
 	}
 
 	// Node advertises the runtime -> Ready.
-	markNodeReady(t, ctx, c, node, poolKey)
+	markNodeReady(t, ctx, c, node, name, p.Generation)
 	reconcileProfile(t, ctx, r, name)
 	p = getProfile(t, ctx, c, name)
 	if p.Status.ReadyNodes != 1 {
@@ -207,7 +208,7 @@ func TestNodeProfileFinalizerBlocksGC(t *testing.T) {
 	}
 }
 
-func markNodeReady(t *testing.T, ctx context.Context, c client.Client, name, poolKey string) {
+func markNodeReady(t *testing.T, ctx context.Context, c client.Client, name, profile string, generation int64) {
 	t.Helper()
 	var node corev1.Node
 	if err := c.Get(ctx, types.NamespacedName{Name: name}, &node); err != nil {
@@ -217,7 +218,12 @@ func markNodeReady(t *testing.T, ctx context.Context, c client.Client, name, poo
 	if node.Labels == nil {
 		node.Labels = map[string]string{}
 	}
+	if node.Annotations == nil {
+		node.Annotations = map[string]string{}
+	}
 	node.Labels[brewlet.LabelRuntimeReady] = brewlet.ValueReady
+	node.Annotations[brewlet.AnnotationProfile] = profile
+	node.Annotations[brewlet.AnnotationProfileGeneration] = strconv.FormatInt(generation, 10)
 	if err := c.Patch(ctx, &node, patch); err != nil {
 		t.Fatalf("marking node ready: %v", err)
 	}

@@ -38,6 +38,34 @@ kubectl get nodes -L brewlet.sh/runtime
 See the [Brewlet installation guide](https://github.com/brewlet/site) for
 cluster prerequisites and production configuration.
 
+### Custom JDK distributions
+
+`temurin` and `microsoft` use built-in image mappings. For another distribution,
+provide its fully qualified OCI image and Java home directly in the
+`NodeProfile`. For example, Azul Zulu 21:
+
+```yaml
+apiVersion: node.brewlet.sh/v1alpha1
+kind: NodeProfile
+metadata:
+  name: zulu
+spec:
+  nodePool:
+    names: ["zulu-workers"]
+  jdks:
+    - distribution: zulu
+      feature: 21
+      source:
+        image: docker.io/library/azul-zulu:21
+        javaHome: /usr/lib/jvm/zulu21
+```
+
+Use a digest-pinned image in production. The image must support every
+architecture in the selected pool, contain `<javaHome>/bin/java`, and provide the
+runtime's required userland libraries. `javaHome` may point to a centrally built
+jlink runtime; Brewlet installs it once per node pool rather than placing it in
+each application artifact.
+
 ## Install raw manifests
 
 ```bash

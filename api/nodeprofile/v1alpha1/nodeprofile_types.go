@@ -40,12 +40,25 @@ type NodePoolRef struct {
 	Key string `json:"key,omitempty"`
 }
 
-// JDKRef is one curated JDK root to install.
+// JDKRef is one JDK root to install.
 type JDKRef struct {
-	// Distribution is the curated JDK distribution: "temurin" or "microsoft".
+	// Distribution is the stable, lowercase distribution identifier used in the
+	// on-node inventory token, such as "temurin", "microsoft", or "zulu".
 	Distribution string `json:"distribution"`
 	// Feature is the JDK feature version (e.g. 21).
 	Feature int32 `json:"feature"`
+	// Source is required for a non-curated distribution and omitted for curated
+	// distributions, whose official image mapping is built into the provisioner.
+	Source *JDKSource `json:"source,omitempty"`
+}
+
+// JDKSource describes where a custom JDK is copied from.
+type JDKSource struct {
+	// Image is a fully qualified OCI image reference containing the JDK root.
+	// Production profiles should pin this reference by digest.
+	Image string `json:"image"`
+	// JavaHome is the absolute path to the JDK root inside Image.
+	JavaHome string `json:"javaHome"`
 }
 
 // Token renders the JDK as the on-node "<distribution>-<feature>" inventory token

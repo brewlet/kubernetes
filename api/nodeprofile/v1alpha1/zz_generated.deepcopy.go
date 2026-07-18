@@ -12,6 +12,9 @@ import (
 // DeepCopyInto copies the receiver into out.
 func (in *JDKRef) DeepCopyInto(out *JDKRef) {
 	*out = *in
+	if in.Source != nil {
+		out.Source = in.Source.DeepCopy()
+	}
 }
 
 // DeepCopy returns a deep copy of the receiver.
@@ -20,6 +23,21 @@ func (in *JDKRef) DeepCopy() *JDKRef {
 		return nil
 	}
 	out := new(JDKRef)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto copies the receiver into out.
+func (in *JDKSource) DeepCopyInto(out *JDKSource) {
+	*out = *in
+}
+
+// DeepCopy returns a deep copy of the receiver.
+func (in *JDKSource) DeepCopy() *JDKSource {
+	if in == nil {
+		return nil
+	}
+	out := new(JDKSource)
 	in.DeepCopyInto(out)
 	return out
 }
@@ -93,7 +111,9 @@ func (in *NodeProfileSpec) DeepCopyInto(out *NodeProfileSpec) {
 	in.NodePool.DeepCopyInto(&out.NodePool)
 	if in.JDKs != nil {
 		out.JDKs = make([]JDKRef, len(in.JDKs))
-		copy(out.JDKs, in.JDKs)
+		for i := range in.JDKs {
+			in.JDKs[i].DeepCopyInto(&out.JDKs[i])
+		}
 	}
 	if in.Launchers != nil {
 		out.Launchers = make([]string, len(in.Launchers))

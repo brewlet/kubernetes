@@ -52,6 +52,32 @@ kubectl get nodes -L brewlet.sh/runtime
 | `admission.failurePolicy` | `Ignore` | Webhook failure policy — `Ignore` never blocks workloads on a webhook outage. |
 | `admission.port` | `9443` | Webhook server port. |
 
+For a custom JDK distribution, use the structured inventory form:
+
+```yaml
+provisioner:
+  jdks:
+    - distribution: zulu
+      feature: 21
+      source:
+        image: docker.io/library/azul-zulu:21
+        javaHome: /usr/lib/jvm/zulu21
+```
+
+The string form remains supported for curated inventories. A custom image may
+contain a full JDK or a centrally built jlink runtime, but must include the
+userland libraries required by `javaHome/bin/java`. Pin custom images by digest
+in production.
+
+> **Upgrades:** Helm installs files under `crds/` only on first install and does
+> not upgrade existing CRDs. Before upgrading an existing Brewlet release to a
+> version that supports custom JDK sources, apply the matching CRD explicitly:
+>
+> ```bash
+> kubectl apply -f deploy/nodeprofile-crd.yaml
+> helm upgrade brewlet ./charts/brewlet -f values.yaml
+> ```
+
 ## Requesting a JDK / launcher
 
 A pod (or the raw Deployment) opts into a specific JDK/launcher via annotations,

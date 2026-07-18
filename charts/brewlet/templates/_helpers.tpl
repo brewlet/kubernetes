@@ -18,11 +18,12 @@ brewlet-admission
 {{- end -}}
 
 {{/*
-brewlet.jdkItems renders a comma-separated "<dist>-<feature>" JDK string (e.g.
-"temurin-21,microsoft-25") as the NodeProfile spec.jdks list. Call with a dict:
+brewlet.jdkItems renders either a comma-separated "<dist>-<feature>" JDK string
+or a structured JDK list as the NodeProfile spec.jdks list. Call with a dict:
   {{ include "brewlet.jdkItems" (dict "value" "temurin-21,microsoft-25") }}
 */}}
 {{- define "brewlet.jdkItems" -}}
+{{- if kindIs "string" .value -}}
 {{- $spec := trim .value -}}
 {{- if not $spec -}}{{- fail "provisioner.jdks must list at least one <dist>-<feature> JDK" -}}{{- end -}}
 {{- range $tok := splitList "," $spec -}}
@@ -33,6 +34,27 @@ brewlet.jdkItems renders a comma-separated "<dist>-<feature>" JDK string (e.g.
 - distribution: {{ index $parts 0 | quote }}
   feature: {{ index $parts 1 }}
 {{ end -}}
+{{- end -}}
+{{- else if kindIs "slice" .value -}}
+{{- if eq (len .value) 0 -}}{{- fail "provisioner.jdks must list at least one JDK" -}}{{- end -}}
+{{- toYaml .value -}}
+{{- else -}}
+{{- fail "JDK inventory must be a comma-separated string or a list of JDK objects" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Render either JDK inventory form as the legacy comma-separated token list. */}}
+{{- define "brewlet.jdkTokens" -}}
+{{- if kindIs "string" .value -}}
+{{- trim .value -}}
+{{- else if kindIs "slice" .value -}}
+{{- $tokens := list -}}
+{{- range $jdk := .value -}}
+{{- $tokens = append $tokens (printf "%s-%v" $jdk.distribution $jdk.feature) -}}
+{{- end -}}
+{{- join "," $tokens -}}
+{{- else -}}
+{{- fail "JDK inventory must be a comma-separated string or a list of JDK objects" -}}
 {{- end -}}
 {{- end -}}
 

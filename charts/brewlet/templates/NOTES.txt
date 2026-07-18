@@ -12,7 +12,7 @@ Components:
 {{- end }}
 
 Node inventory the operator will install (§5.3/§5.4):
-  JDKs:      {{ .Values.provisioner.jdks }}
+  JDKs:      {{ include "brewlet.jdkTokens" (dict "value" .Values.provisioner.jdks) }}
   Launchers: {{ .Values.provisioner.launchers | default "(vanilla java only)" }}
   Method:    copy-from-image (via host containerd)
 

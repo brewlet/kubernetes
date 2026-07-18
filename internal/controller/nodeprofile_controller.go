@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	nodev1alpha1 "brewlet-operator/api/nodeprofile/v1alpha1"
 	"brewlet-operator/internal/brewlet"
@@ -192,7 +193,10 @@ func (r *NodeProfileReconciler) poolCounts(profile *nodev1alpha1.NodeProfile, re
 			continue
 		}
 		assigned++
-		if node.Labels[brewlet.LabelRuntimeReady] == brewlet.ValueReady {
+		appliedRevision := node.Annotations[brewlet.AnnotationProfile] == profile.Name &&
+			node.Annotations[brewlet.AnnotationProfileGeneration] == strconv.FormatInt(profile.Generation, 10)
+		if node.Labels[brewlet.LabelRuntimeReady] == brewlet.ValueReady &&
+			(profile.Generation == 0 || appliedRevision) {
 			ready++
 		}
 	}

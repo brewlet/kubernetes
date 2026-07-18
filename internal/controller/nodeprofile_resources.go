@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	nodev1alpha1 "brewlet-operator/api/nodeprofile/v1alpha1"
@@ -123,6 +125,27 @@ func jdkTokens(profile *nodev1alpha1.NodeProfile) string {
 	return strings.Join(toks, ",")
 }
 
+func customJDKSourceEnv(profile *nodev1alpha1.NodeProfile) []corev1.EnvVar {
+	var sources []corev1.EnvVar
+	count := 0
+	for _, j := range profile.Spec.JDKs {
+		if j.Source == nil {
+			continue
+		}
+		prefix := fmt.Sprintf("JDK_CUSTOM_SOURCE_%d_", count)
+		sources = append(sources,
+			corev1.EnvVar{Name: prefix + "TOKEN", Value: j.Token()},
+			corev1.EnvVar{Name: prefix + "IMAGE", Value: j.Source.Image},
+			corev1.EnvVar{Name: prefix + "JAVA_HOME", Value: j.Source.JavaHome},
+		)
+		count++
+	}
+	if count == 0 {
+		return nil
+	}
+	return append([]corev1.EnvVar{{Name: "JDK_CUSTOM_SOURCE_COUNT", Value: fmt.Sprintf("%d", count)}}, sources...)
+}
+
 // mirrorEnv encodes a profile's registry mirrors as a deterministic
 // comma-separated "host=mirror" list for the provisioner's MIRRORS env (§5.6).
 // Returns "" when no mirrors are configured.
@@ -167,7 +190,10 @@ func buildProfileDaemonSet(cfg Config, profile *nodev1alpha1.NodeProfile, resolv
 		{Name: "JDKS", Value: jdkTokens(profile)},
 		{Name: "LAUNCHERS", Value: strings.Join(profile.Spec.Launchers, ",")},
 		{Name: "BREWLET_CONTAINERD_RESTART", Value: containerdRestart(profile)},
+		{Name: "BREWLET_PROFILE_NAME", Value: profile.Name},
+		{Name: "BREWLET_PROFILE_GENERATION", Value: strconv.FormatInt(profile.Generation, 10)},
 	}
+	env = append(env, customJDKSourceEnv(profile)...)
 	if m := mirrorEnv(profile); m != "" {
 		env = append(env, corev1.EnvVar{Name: "MIRRORS", Value: m})
 	}

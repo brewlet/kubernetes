@@ -49,7 +49,7 @@ func newValidator(t *testing.T, existing ...*nodev1alpha1.NodeProfile) *NodeProf
 	}
 }
 
-func TestNodeProfileValidator_RejectsUnknownDistribution(t *testing.T) {
+func TestNodeProfileValidator_RejectsCustomDistributionWithoutSource(t *testing.T) {
 	v := newValidator(t)
 	p := &nodev1alpha1.NodeProfile{
 		ObjectMeta: metav1.ObjectMeta{Name: "bad"},
@@ -57,7 +57,7 @@ func TestNodeProfileValidator_RejectsUnknownDistribution(t *testing.T) {
 	}
 	res := v.Handle(context.Background(), profileRequest(t, p))
 	if res.Allowed {
-		t.Fatal("expected rejection for unknown distribution")
+		t.Fatal("expected rejection for custom distribution without source")
 	}
 }
 
@@ -104,5 +104,24 @@ func TestNodeProfileValidator_AllowsValid(t *testing.T) {
 	res := v.Handle(context.Background(), profileRequest(t, p))
 	if !res.Allowed {
 		t.Fatalf("expected valid profile to be allowed, got %+v", res.Result)
+	}
+}
+
+func TestNodeProfileValidator_AllowsCustomDistributionWithSource(t *testing.T) {
+	v := newValidator(t)
+	p := &nodev1alpha1.NodeProfile{
+		ObjectMeta: metav1.ObjectMeta{Name: "zulu"},
+		Spec: nodev1alpha1.NodeProfileSpec{JDKs: []nodev1alpha1.JDKRef{{
+			Distribution: "zulu",
+			Feature:      21,
+			Source: &nodev1alpha1.JDKSource{
+				Image:    "docker.io/library/azul-zulu:21",
+				JavaHome: "/usr/lib/jvm/zulu21",
+			},
+		}}},
+	}
+	res := v.Handle(context.Background(), profileRequest(t, p))
+	if !res.Allowed {
+		t.Fatalf("expected custom JDK profile to be allowed, got %+v", res.Result)
 	}
 }
